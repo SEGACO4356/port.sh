@@ -50,6 +50,7 @@ function openPorts() {
 
 	read ip
 
+
 	echo -e "\n${yellowColour}[+]${endColour} ${greenColour}Escaneando puertos, por favor espera :) ...${endColour}"
 
 # Verificamos que la variable ip tenga un valor
@@ -59,13 +60,13 @@ if [ -z $ip ]; then
 	exit 1
 fi
 
-	scanOpen=$(nmap -p- --open -sS -n -vvv --min-rate 5000 $ip | grep -i "open")
+scanOpen=$(nmap -p- --open -sS -n -vvv --min-rate 5000 "$ip" | grep -i "open" | grep -Eo '[0-9]+/tcp' | awk -F '/' '{print $1}' | sort -u | tr '\n' ',' | head -c -1 | sed 's/,/, /g')
 	
 	open_ports=''
 	
 	while read -r port; do
 
-		open_ports+="$port "	
+		open_ports+="$port \n"	
 
 	done <<< "$scanOpen"
 
@@ -78,13 +79,43 @@ fi
 		echo -e "\n${yellowColour}[!]${endColour}${grayColour} Puertos abiertos en la IP:${endColour} ${turquoiseColour}$ip${endColour}\n"
 
 		echo -e "\n${yellowColour}[+]${endColour} ${grayColour}Puertos:${endColour} ${grayColour}$open_ports ${endColour}\n"
-	
-		exit 0
+
+		information_ports_validate=""
+
+		echo -e "\n${yellowColour}[!]${endColour} ${grayColour} ¿Quieres obtener información de los puertos abiertos?${endColour} ${turquoiseColour}[s/n]${endColour}"
+
+		read information_ports_validate
+
+		if [ "$information_ports_validate" == "s" ]; then
+			
+			echo -e "\n${yellowColour}[+]${endColour} ${grayColour}Información de los puertos abiertos en la IP:${endColour} ${turquoiseColour}$ip${endColour}\n"
+
+				information_ports=$(nmap -p $open_ports -sCV -n -vvv $ip)
+
+
+
+				echo -e "\n${yellowColour}[+]${endColour} ${grayColour}Puerto:${endColour} ${turquoiseColour}$open_ports${endColour}\n"
+
+				echo -e "\n${yellowColour}[+]${endColour} ${grayColour}Información:${endColour} ${turquoiseColour}$information_ports${endColour}\n"
+
+
+
+				exit 1
+
+		else	
+
+			echo -e "\n${yellowColour}[!]${endColour} ${redColour}Saliendo...${endColour}\n"
+
+			exit 0
+
+		fi
+		
 	
 	else
-		echo -e "\n${redColour}[!] No se han encontrado puertos abiertos en la IP:${endColour} ${turquoiseColour}$ip${endColour}\n"
+		echo -e "\n${redColour}[!] No se han encontrado puertos abiertos en la IP:${endColour} ${turquoiseColour}$ip ${endColour}\n"
 		exit 1
 	fi
+
 
 }
 
